@@ -6,13 +6,13 @@ find more information regarding installing docker at https://docs.docker.com/doc
 
 
 To create this image and run the container:
--open a powershell window and navigae to the directory where the dockerfile exists
--run the following command in the powershell window 
+
+1. open a powershell window and navigae to the directory where the dockerfile exists
+2. run the following command in the powershell window 
 ```
 docker build -t iis-hello-world .
 
 docker run -d -p 8000:8000 --name running-hello-world iis-hello-world
 ```
 
-To view the iis website running in your container:
--in a browser, navigate to localhost:8000
+To view the iis website running in your container, open a browser and navigate to localhost:8000
