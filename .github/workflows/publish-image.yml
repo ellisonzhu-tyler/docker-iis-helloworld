@@ -4,6 +4,15 @@ on: [push, pull_request]
 permissions:
   id-token: write # This is required for requesting the JWT
 
+env:
+  AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  AWS_TASK_DEFINITION_ARN: ${{ secrets.AWS_TASK_DEFINITION_ARN }}
+  AWS_SERVICE: ${{ secrets.AWS_SERVICE }}
+  AWS_CLUSTER: ${{ secrets.AWS_CLUSTER }}
+
 jobs:
   publish:
     runs-on: windows-latest
@@ -13,9 +22,9 @@ jobs:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-        # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+        # aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+        # aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-gov-west-1
 
     - name: Login to Amazon ECR
@@ -26,18 +35,18 @@ jobs:
       id: build-image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        docker build -t $ECR_REGISTRY/${ECR_REPOSITORY}:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/${ECR_REPOSITORY}:$IMAGE_TAG
+        echo "image=$ECR_REGISTRY/${ECR_REPOSITORY}:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       with:
-        task-definition-arn: ${{ secrets.AWS_TASK_DEFINITION_ARN }}
+        task-definition-arn: ${{ env.AWS_TASK_DEFINITION_ARN }}
         container-name: my-container
         image: ${{ steps.build-image.outputs.image }}
 
@@ -45,6 +54,6 @@ jobs:
       uses: aws-actions/amazon-ecs-deploy-task-definition@v2
       with:
         task-definition: ${{ steps.task-def.outputs.task-definition }}
-        service: ${{ secrets.AWS_SERVICE }}
-        cluster: ${{ secrets.AWS_CLUSTER }}
+        service: ${{ env.AWS_SERVICE }}
+        cluster: ${{ env.AWS_CLUSTER }}
         wait-for-service-stability: true
