@@ -10,6 +10,7 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
   AWS_TASK_DEFINITION_ARN: ${{ secrets.AWS_TASK_DEFINITION_ARN }}
+  AWS_CONTAINER: ${{ secrets.AWS_CONTAINER }}
   AWS_SERVICE: ${{ secrets.AWS_SERVICE }}
   AWS_CLUSTER: ${{ secrets.AWS_CLUSTER }}
 
@@ -49,7 +50,7 @@ jobs:
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       with:
         task-definition-arn: ${{ env.AWS_TASK_DEFINITION_ARN }}
-        container-name: my-container
+        container-name: ${{ env.AWS_CONTAINER }}
         image: ${{ steps.build-image.outputs.image }}
 
     - name: Deploy Amazon ECS task definition
