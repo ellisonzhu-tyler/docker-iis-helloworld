@@ -7,8 +7,6 @@ RUN powershell -NoProfile -Command \
     Remove-Website -Name 'Default Web Site'; \
     New-Website -Name "MyWebsite" -PhysicalPath C:\MyWebsite -Port 80
 
-HEALTHCHECK --interval=15s --timeout=15s --start-period=30s --retries=3 CMD curl --fail http://localhost:80 || exit 1
-
 EXPOSE 80
 
 ADD WebsiteFiles/ /MyWebsite
