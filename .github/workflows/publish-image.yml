@@ -10,7 +10,7 @@ on:
       ecr_repository:
         description: Name of the ECR repository
         required: true
-      task_definition:
+      task_definition_arn:
         description: Task definition ARN to update
         required: true
       container:
@@ -30,7 +30,7 @@ on:
 env:
   AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
   ECR_REPOSITORY: ${{ secrets.ecr_repository }}
-  AWS_TASK_DEFINITION_ARN: ${{ secrets.task_definition }}
+  AWS_TASK_DEFINITION_ARN: ${{ secrets.task_definition_arn }}
   AWS_CONTAINER: ${{ secrets.container }}
   AWS_SERVICE: ${{ secrets.service }}
   AWS_CLUSTER: ${{ secrets.cluster }}

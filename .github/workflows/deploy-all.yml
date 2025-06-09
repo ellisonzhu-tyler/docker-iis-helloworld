@@ -33,7 +33,7 @@ jobs:
     secrets:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       ecr_repository: ${{ matrix.ecr_repository }}
-      task_definition: ${{ matrix.task_definition }}
+      task_definition_arn: ${{ matrix.task_definition_arn }}
       container: ${{ matrix.container }}
       cluster: ${{ matrix.cluster }}
       service: ${{ matrix.service }}
