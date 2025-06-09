@@ -1,26 +1,45 @@
-name: Publish Image
+name: Deploy Image
 
 on:
   # [push, pull_request]
-  workflow_dispatch:
-    inputs:
-      repository:
+  workflow_call:
+    secrets:
+      AWS_ROLE_TO_ASSUME:
+        description: IAM role ARN to assume
+        required: true
+      ecr_repository:
         description: Name of the ECR repository
         required: true
-        type: string
+      task_definition:
+        description: Task definition ARN to update
+        required: true
+      container:
+        description: Name of the container to update
+        required: true
+      service:
+        description: AWS Service
+        required: true
+      cluster:
+        description: AWS Cluster
+        required: true
 
-permissions:
-  id-token: write # This is required for requesting the JWT
+
+# permissions:
+#   id-token: write # This is required for requesting the JWT
 
 env:
   AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  ECR_REPOSITORY: ${{ secrets.ecr_repository }}
+  AWS_TASK_DEFINITION_ARN: ${{ secrets.task_definition }}
+  AWS_CONTAINER: ${{ secrets.container }}
+  AWS_SERVICE: ${{ secrets.service }}
+  AWS_CLUSTER: ${{ secrets.cluster }}
+
   # ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-  AWS_TASK_DEFINITION_ARN: ${{ secrets.AWS_TASK_DEFINITION_ARN }}
-  AWS_CONTAINER: ${{ secrets.AWS_CONTAINER }}
-  AWS_SERVICE: ${{ secrets.AWS_SERVICE }}
-  AWS_CLUSTER: ${{ secrets.AWS_CLUSTER }}
+  # AWS_TASK_DEFINITION_ARN: ${{ secrets.AWS_TASK_DEFINITION_ARN }}
+  # AWS_CONTAINER: ${{ secrets.AWS_CONTAINER }}
+  # AWS_SERVICE: ${{ secrets.AWS_SERVICE }}
+  # AWS_CLUSTER: ${{ secrets.AWS_CLUSTER }}
 
 jobs:
   publish:
@@ -56,8 +75,8 @@ jobs:
     - name: Fetch latest image for the repository
       id: fetch-latest
       run: |
-        $image_tag = aws ecr describe-images --repository-name ${{ inputs.repository }} --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' --output text
-        $uri = "${{ steps.login-ecr.outputs.registry }}/${{ inputs.repository }}:$image_tag"
+        $image_tag = aws ecr describe-images --repository-name ${{ env.ECR_REPOSITORY }} --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' --output text
+        $uri = "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:$image_tag"
         "image=$uri" | Out-File -FilePath $Env:GITHUB_OUTPUT -Encoding utf8 -Append
 
     - name: Fill in the new image ID in the Amazon ECS task definition
