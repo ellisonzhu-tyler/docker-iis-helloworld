@@ -1,5 +1,13 @@
 
-on: [push, pull_request]
+on:
+  # [push, pull_request]
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: ARN of the ECR repository
+        required: true
+        type: string
+
 
 permissions:
   id-token: write # This is required for requesting the JWT
@@ -8,7 +16,7 @@ env:
   AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  # ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
   AWS_TASK_DEFINITION_ARN: ${{ secrets.AWS_TASK_DEFINITION_ARN }}
   AWS_CONTAINER: ${{ secrets.AWS_CONTAINER }}
   AWS_SERVICE: ${{ secrets.AWS_SERVICE }}
@@ -32,17 +40,24 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Build, tag, and push image to Amazon ECR
-      id: build-image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
-        IMAGE_TAG: ${{ github.sha }}
+    # - name: Build, tag, and push image to Amazon ECR
+    #   id: build-image
+    #   env:
+    #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+    #     ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+    #     IMAGE_TAG: ${{ github.sha }}
+    #   run: |
+    #     $uri = "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}"
+    #     docker build -t $uri .
+    #     docker push $uri
+    #     # append the image output for GH Actions, using powershell
+    #     "image=$uri" | Out-File -FilePath $Env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+    - name: Fetch latest image for the repository
+      id: fetch-latest
       run: |
-        $uri = "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}"
-        docker build -t $uri .
-        docker push $uri
-        # append the image output for GH Actions, using powershell
+        $image_tag = aws ecr describe-images --repository-name ${{ inputs.repository }} --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' --output text
+        $uri = "${{ steps.login-ecr.outputs.registry }}/${{ inputs.repository }}:$image_tag"
         "image=$uri" | Out-File -FilePath $Env:GITHUB_OUTPUT -Encoding utf8 -Append
 
     - name: Fill in the new image ID in the Amazon ECS task definition
@@ -51,7 +66,8 @@ jobs:
       with:
         task-definition-arn: ${{ env.AWS_TASK_DEFINITION_ARN }}
         container-name: ${{ env.AWS_CONTAINER }}
-        image: ${{ steps.build-image.outputs.image }}
+        image: ${{ steps.fetch-latest.outputs.image }}
+        # image: ${{ steps.build-image.outputs.image }}
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v2
@@ -59,4 +75,4 @@ jobs:
         task-definition: ${{ steps.task-def.outputs.task-definition }}
         service: ${{ env.AWS_SERVICE }}
         cluster: ${{ env.AWS_CLUSTER }}
-        wait-for-service-stability: true
+        wait-for-service-stability: true  # Wait for successful deploy to finish before stopping
