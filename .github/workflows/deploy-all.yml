@@ -29,7 +29,7 @@ jobs:
         run: |
           # extract only the array for this environment
           MATRIX=$(echo "$SERVICES_MATRIX" | jq -c)
-          echo "::set-output name=matrix_json::$MATRIX"
+          echo "matrix_json=$MATRIX" >> $GITHUB_OUTPUT
   deploy:
     needs: generate-steps
     strategy:
