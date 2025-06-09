@@ -22,20 +22,18 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         # include: ${{ fromJson(env.MATRIX_JSON) }}
         include: ${{ fromJson(inputs.matrix_json) }}
 
-    steps:
     # Eventually change this to use {owner}/{repo}/.github/workflows/{filename}@{ref} format
     # since one main action will run many reusable workflows
-    - uses: ./.github/workflows/publish-image.yml
-      with:
-        AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-        ecr_repository: ${{ matrix.ecr_repository }}
-        task_definition: ${{ matrix.task_definition }}
-        container: ${{ matrix.container }}
-        cluster: ${{ matrix.cluster }}
-        service: ${{ matrix.service }}
+    uses: ./.github/workflows/publish-image.yml
+    secrets:
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      ecr_repository: ${{ matrix.ecr_repository }}
+      task_definition: ${{ matrix.task_definition }}
+      container: ${{ matrix.container }}
+      cluster: ${{ matrix.cluster }}
+      service: ${{ matrix.service }}
