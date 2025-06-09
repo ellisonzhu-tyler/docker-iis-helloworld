@@ -64,7 +64,8 @@ data "aws_iam_policy_document" "policy" {
       "ecs:DescribeTaskDefinition",
       "ecs:TagResource",
       "ecs:UntagResource",
-      "iam:PassRole"
+      "iam:PassRole",
+      "ec2:DescribeImages"
     ]
     resources = ["*"]
   }
