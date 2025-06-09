@@ -3,49 +3,39 @@ name: Deploy All Images
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: Environment to deploy to
-        type: choice
-        options: [DEV]
+      # environment:
+      #   description: Environment to deploy to
+      #   type: choice
+      #   options: [DEV]
+      matrix_json:
+        description: JSON string containing services matrix info
+        type: string
 
-env:
+# env:
   # Name of JSON secret should be SERVICES_MATRIX_DEV, etc..
   # There should be a secret of the same name containing json matching ./dev.env.json.example
-  secret_name: ${{ secrets[format('SERVICES_MATRIX_{0}', inputs.environment)] }}
+  # MATRIX_JSON: ${{ secrets[format('SERVICES_MATRIX_{0}', github.event.inputs.environment)] }}
 
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read
 
 jobs:
-  generate-steps:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix_json: ${{ steps.set.outputs.matrix_json }}
-    steps:
-      - id: set
-        env:
-          SERVICES_MATRIX: ${{ env.secret_name }}
-        run: |
-          # extract only the array for this environment
-          MATRIX=$(echo "$SERVICES_MATRIX" | jq -c)
-          echo "matrix_json=$MATRIX" >> $GITHUB_OUTPUT
   deploy:
-    needs: generate-steps
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        include: ${{ fromJson(needs.generate-steps.outputs.matrix_json) }}
+        # include: ${{ fromJson(env.MATRIX_JSON) }}
+        include: ${{ fromJson(inputs.matrix_json) }}
 
+    steps:
     # Eventually change this to use {owner}/{repo}/.github/workflows/{filename}@{ref} format
     # since one main action will run many reusable workflows
-    uses: ./.github/workflows/publish-image.yml
-    secrets:
-      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-      ecr_repository: ${{ matrix.ecr_repository }}
-      task_definition: ${{ matrix.task_definition }}
-      container: ${{ matrix.container }}
-      cluster: ${{ matrix.cluster }}
-      service: ${{ matrix.service }}
-
-
-    
+    - uses: ./.github/workflows/publish-image.yml
+      with:
+        AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        ecr_repository: ${{ matrix.ecr_repository }}
+        task_definition: ${{ matrix.task_definition }}
+        container: ${{ matrix.container }}
+        cluster: ${{ matrix.cluster }}
+        service: ${{ matrix.service }}
