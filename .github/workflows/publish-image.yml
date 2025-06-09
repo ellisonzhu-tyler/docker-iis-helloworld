@@ -1,13 +1,13 @@
+name: Publish Image
 
 on:
   # [push, pull_request]
   workflow_dispatch:
     inputs:
       repository:
-        description: ARN of the ECR repository
+        description: Name of the ECR repository
         required: true
         type: string
-
 
 permissions:
   id-token: write # This is required for requesting the JWT
